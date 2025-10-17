@@ -1,8 +1,3 @@
-"""
-Expense summarization endpoint.
-Accepts a list of expenses and returns a natural-language summary from the LLM.
-"""
-
 import logging
 import requests
 from fastapi import APIRouter, HTTPException
@@ -11,14 +6,11 @@ from typing import List
 from llm_service.utils import get_summarize_prompt
 
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create router
 router = APIRouter()
 
-# Ollama API configuration
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "qwen3:1.7b"
 
@@ -30,18 +22,9 @@ class ExpenseItem(BaseModel):
 
 
 class ExpenseRequest(BaseModel):
-    """Request body for expense summarization.
-    
-    Example:
-    {
-        "expenses": [
-            {"category": "Food", "amount": 45.50},
-            {"category": "Transport", "amount": 20.00},
-            {"category": "Entertainment", "amount": 35.00}
-        ]
-    }
-    """
+    """Request body for expense summarization."""
     expenses: List[ExpenseItem] = Field(..., min_items=1, description="List of expense items")
+    budget: float = Field(..., gt=0, description="Budget")
 
 
 class SummaryResponse(BaseModel):
@@ -69,15 +52,14 @@ async def summarize_expenses(request: ExpenseRequest):
         HTTPException: If Ollama service is unavailable or request fails
     """
     try:
-        # Convert Pydantic models to dictionaries
         expenses = [exp.dict() for exp in request.expenses]
+        budget = request.budget
         
         # Calculate totals
         total = sum(exp['amount'] for exp in expenses)
         count = len(expenses)
         
-        # Generate prompt
-        prompt = get_summarize_prompt(expenses)
+        prompt = get_summarize_prompt(expenses, budget)
         
         logger.info(f"Summarizing {count} expenses totaling ${total:.2f}")
         logger.debug(f"Prompt: {prompt[:100]}...")
@@ -88,8 +70,8 @@ async def summarize_expenses(request: ExpenseRequest):
             "prompt": prompt,
             "stream": False,
             "options": {
-                "temperature": 0.7,
-                "num_predict": 200  # Limit response length for faster responses
+                "temperature": 0.3,
+                "num_predict": 500
             }
         }
         
@@ -99,13 +81,12 @@ async def summarize_expenses(request: ExpenseRequest):
             timeout=120
         )
         response.raise_for_status()
-        
-        # Extract response text
+
         ollama_data = response.json()
-        # Try response field first, then thinking field (for reasoning models)
         summary_text = ollama_data.get("response", "").strip()
+
         if not summary_text:
-            summary_text = ollama_data.get("thinking", "").strip()
+            summary_text = ollama_data.get("response", "").strip()
         
         if not summary_text:
             raise ValueError("Empty response from Ollama")

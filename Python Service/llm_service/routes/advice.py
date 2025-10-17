@@ -1,25 +1,24 @@
-"""
-Budgeting advice endpoint.
-Accepts a free-form question and returns budgeting advice from the LLM.
-"""
-
 import logging
 import requests
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
+from typing import List
 from llm_service.utils import get_advice_prompt
 
 
-# Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Create router
 router = APIRouter()
 
-# Ollama API configuration
 OLLAMA_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "qwen3:1.7b"
+
+
+class ExpenseItem(BaseModel):
+    """Single expense entry."""
+    category: str = Field(..., description="Expense category (e.g., 'Food', 'Transport')")
+    amount: float = Field(..., gt=0, description="Expense amount in dollars")
 
 
 class AdviceRequest(BaseModel):
@@ -27,7 +26,12 @@ class AdviceRequest(BaseModel):
     
     Example:
     {
-        "question": "How can I reduce my monthly grocery expenses?"
+        "question": "How can I reduce my monthly grocery expenses?",
+        "expenses": [
+            {"category": "Food", "amount": 300.50},
+            {"category": "Transport", "amount": 150.00}
+        ],
+        "budget": 500.00
     }
     """
     question: str = Field(
@@ -36,6 +40,9 @@ class AdviceRequest(BaseModel):
         max_length=500,
         description="User's budgeting question"
     )
+    expenses: List[ExpenseItem] = Field(..., min_items=1, description="List of expense items")
+    budget: float = Field(..., gt=0, description="User's budget amount in dollars")
+
 
 
 class AdviceResponse(BaseModel):
@@ -63,21 +70,26 @@ async def get_budgeting_advice(request: AdviceRequest):
     """
     try:
         question = request.question.strip()
+        expenses = [exp.dict() for exp in request.expenses]
+        budget = request.budget
         
-        logger.info(f"Processing advice request: {question[:50]}...")
+        # Calculate totals for logging
+        total = sum(exp['amount'] for exp in expenses)
+        count = len(expenses)
+        budget_status = "over" if total > budget else "under" if total < budget else "at"
         
-        # Generate prompt
-        prompt = get_advice_prompt(question)
+        logger.info(f"Processing advice request: {question[:50]}... with {count} expenses totaling ${total:.2f} ({budget_status} budget of ${budget:.2f})")
+
+        prompt = get_advice_prompt(question, expenses, budget)
         logger.debug(f"Prompt: {prompt[:100]}...")
         
-        # Call Ollama API
         ollama_request = {
             "model": MODEL_NAME,
             "prompt": prompt,
             "stream": False,
             "options": {
-                "temperature": 0.7,
-                "num_predict": 150  # Limit response length for faster responses
+                "temperature": 0.6,
+                "num_predict": 500
             }
         }
         
@@ -88,12 +100,11 @@ async def get_budgeting_advice(request: AdviceRequest):
         )
         response.raise_for_status()
         
-        # Extract response text
         ollama_data = response.json()
-        # Try response field first, then thinking field (for reasoning models)
+
         advice_text = ollama_data.get("response", "").strip()
         if not advice_text:
-            advice_text = ollama_data.get("thinking", "").strip()
+            advice_text = ollama_data.get("response", "").strip()
         
         if not advice_text:
             raise ValueError("Empty response from Ollama")
