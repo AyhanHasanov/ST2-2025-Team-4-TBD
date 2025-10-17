@@ -7,5 +7,8 @@
         public DateTime Date { get; set; }
         public string? Description { get; set; }
         public string Type { get; set; } = "Expense";
+        public int AccountId { get; set; }  // link to the account
+        public int? CategoryId { get; set; }
     }
+
 }

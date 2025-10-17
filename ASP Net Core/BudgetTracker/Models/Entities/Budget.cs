@@ -6,7 +6,7 @@ namespace BudgetTracker.Models.Entities
     public class Budget:BaseEntity
     {
         [Required]
-        public decimal LimitAmount { get; set; }  // Max budget for this period
+        public decimal BudgetAmount { get; set; }  // Max budget for this period
 
         [Required]
         public DateTime StartDate { get; set; }   // Period start

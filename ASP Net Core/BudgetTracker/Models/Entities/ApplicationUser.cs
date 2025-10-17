@@ -22,10 +22,11 @@ namespace BudgetTracker.Models.Entities
         public string Language { get; set; } = "bg";
 
         // Navigation properties
+        public ICollection<Account> Accounts { get; set; } = new List<Account>();
         public ICollection<Transaction> Transactions { get; set; } = new List<Transaction>();
         public ICollection<Category> Categories { get; set; } = new List<Category>();
         public ICollection<Budget> Budgets { get; set; } = new List<Budget>();
-        public ICollection<AI_Log> AI_Logs { get; set; } = new List<AI_Log>();
+        //public ICollection<AI_Log> AI_Logs { get; set; } = new List<AI_Log>();
 
 
     }

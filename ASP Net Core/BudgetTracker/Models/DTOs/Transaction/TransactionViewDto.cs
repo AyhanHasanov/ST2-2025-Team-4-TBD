@@ -4,9 +4,12 @@
     {
         public int TransactionId { get; set; }
         public decimal Amount { get; set; }
-        public string Currency { get; set; }= "BGN";
+        public string Currency { get; set; }
         public DateTime Date { get; set; }
         public string? Description { get; set; }
-        public string Type { get; set; }= "Expense";
+        public string Type { get; set; }
+        public string AccountName { get; set; }  // display account name
+        public string? CategoryName { get; set; } // display category name
     }
+
 }

@@ -27,6 +27,11 @@ namespace BudgetTracker.Models.Entities
         // Optional link to Budget (if applicable)
         public int? BudgetId { get; set; }
         public Budget? Budget { get; set; }
+        //Account link
+
+        [Required]
+        public int AccountId { get; set; }
+        public Account Account { get; set; }
 
         // Optional link to Category
         public int? CategoryId { get; set; }
