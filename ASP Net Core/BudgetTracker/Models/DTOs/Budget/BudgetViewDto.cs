@@ -7,16 +7,12 @@
         public string Currency { get; set; } = "BGN";
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
-        //public int CategoryId { get; set; }
-        public string CategoryName { get; set; }
-        public decimal SpentAmount { get; set; } = 0;
-        public decimal RemainingAmount
-        {
-            get
-            {
-                var remaining = LimitAmount - SpentAmount;
-                return remaining;
-            }
-        }
+
+        //logic will be incorporated in service/controller
+        public decimal SpentAmount { get; set; }
+        public decimal IncomeAmount { get; set; }
+        public decimal RemainingAmount { get; set; }
+        public bool InLimit { get; set; }
+        public bool Exceeded { get; set; }
     }
 }

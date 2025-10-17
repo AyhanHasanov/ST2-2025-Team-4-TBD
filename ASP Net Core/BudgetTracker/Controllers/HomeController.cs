@@ -1,20 +1,28 @@
 using System.Diagnostics;
 using BudgetTracker.Models;
+using BudgetTracker.Models.Entities;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+
 
 namespace BudgetTracker.Controllers
 {
+    [Authorize]
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
-
-        public HomeController(ILogger<HomeController> logger)
+        private readonly UserManager<ApplicationUser> _userManager;
+        
+        public HomeController(ILogger<HomeController> logger,UserManager<ApplicationUser> userManager)
         {
             _logger = logger;
+            this._userManager = userManager;
         }
 
         public IActionResult Index()
         {
+            ViewData["UserID"]=_userManager.GetUserId(this.User);
             return View();
         }
 

@@ -2,22 +2,34 @@
 
 namespace BudgetTracker.Models.Entities
 {
-    public class Transaction:BaseEntity
+    public class Transaction : BaseEntity
     {
-        public int TransactionId { get; set; }
-
         [Required]
         public decimal Amount { get; set; }
-        [Required]
-        public string Currency { get; set; } = "BGN";//Option for currency when user has paid in different currency
+
+        [Required, StringLength(3)]
+        public string Currency { get; set; } = "BGN"; // Use ISO codes
+
         [Required]
         public DateTime Date { get; set; }
+
         [MaxLength(100)]
         public string? Description { get; set; }
-        [Required]
-        public string Type { get; set; } = "Expense";//Expense or Income, etc.
-        public int UserId { get; set; }
-        public User User { get; set; }
 
+        [Required]
+        public string Type { get; set; } = "Expense";
+
+        // Relationships
+        [Required]
+        public string UserId { get; set; } = string.Empty;
+        public ApplicationUser User { get; set; }
+
+        // Optional link to Budget (if applicable)
+        public int? BudgetId { get; set; }
+        public Budget? Budget { get; set; }
+
+        // Optional link to Category
+        public int? CategoryId { get; set; }
+        public Category? Category { get; set; }
     }
 }
